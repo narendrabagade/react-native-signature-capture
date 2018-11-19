@@ -1,6 +1,7 @@
 package com.rssignaturecapture;
 
 import android.util.Log;
+import android.view.Gravity;
 import android.view.ViewGroup;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.uimanager.ThemedReactContext;
@@ -35,11 +36,9 @@ public class RSSignatureCaptureMainView extends LinearLayout implements OnClickL
 
   Activity mActivity;
   int mOriginalOrientation;
-  Boolean saveFileInExtStorage = false;
+  Boolean saveFileInExtStorage = true;
   String viewMode = "portrait";
-  Boolean showBorder = true;
   Boolean showNativeButtons = true;
-  Boolean showTitleLabel = true;
   int maxSize = 500;
 
   public RSSignatureCaptureMainView(Context context, Activity activity) {
@@ -57,10 +56,6 @@ public class RSSignatureCaptureMainView extends LinearLayout implements OnClickL
 
     setLayoutParams(new android.view.ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
         ViewGroup.LayoutParams.MATCH_PARENT));
-  }
-
-  public RSSignatureCaptureView getSignatureView() {
-    return signatureView;
   }
 
   public void setSaveFileInExtStorage(Boolean saveFileInExtStorage) {
@@ -101,6 +96,7 @@ public class RSSignatureCaptureMainView extends LinearLayout implements OnClickL
 
     // set orientation
     linearLayout.setOrientation(LinearLayout.HORIZONTAL);
+    linearLayout.setGravity(Gravity.CENTER_HORIZONTAL);
     linearLayout.setBackgroundColor(Color.WHITE);
 
     // set texts, tags and OnClickListener
@@ -138,32 +134,25 @@ public class RSSignatureCaptureMainView extends LinearLayout implements OnClickL
    * save the signature to an sd card directory
    */
   final void saveImage() {
-
-    String root = Environment.getExternalStorageDirectory().toString();
-
-    // the directory where the signature will be saved
-    File myDir = new File(root + "/saved_signature");
-
-    // make the directory if it does not exist yet
-    if (!myDir.exists()) {
-      myDir.mkdirs();
+    File image=null;
+    File path = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/.MCAS");
+    if ( !path.exists() ) {
+      path.mkdir();
     }
-
-    // set the file name of your choice
-    String fname = "signature.png";
-
     // in our case, we delete the previous file, you can remove this
-    File file = new File(myDir, fname);
-    if (file.exists()) {
-      file.delete();
+    try {
+       image = File.createTempFile("signature", ".jpg", path);
+    }catch( Exception e ){
+      Log.i("Signature","Exception in saveImage"+e.toString());
     }
 
     try {
 
       Log.d("React Signature", "Save file-======:" + saveFileInExtStorage);
       // save the signature
+      saveFileInExtStorage =true;
       if (saveFileInExtStorage) {
-        FileOutputStream out = new FileOutputStream(file);
+        FileOutputStream out = new FileOutputStream(image);
         this.signatureView.getSignature().compress(Bitmap.CompressFormat.PNG, 90, out);
         out.flush();
         out.close();
@@ -179,7 +168,7 @@ public class RSSignatureCaptureMainView extends LinearLayout implements OnClickL
       String encoded = Base64.encodeToString(byteArray, Base64.DEFAULT);
 
       WritableMap event = Arguments.createMap();
-      event.putString("pathName", file.getAbsolutePath());
+      event.putString("pathName",  image.getAbsolutePath());
       event.putString("encoded", encoded);
       ReactContext reactContext = (ReactContext) getContext();
       reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(getId(), "topChange", event);
