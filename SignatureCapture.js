@@ -3,7 +3,7 @@
 
 var ReactNative = require('react-native');
 var React = require('react');
-var PropTypes = require('prop-types');
+import PropTypes from 'prop-types'
 var {
     requireNativeComponent,
     View,
@@ -16,7 +16,6 @@ class SignatureCapture extends React.Component {
     constructor() {
         super();
         this.onChange = this.onChange.bind(this);
-        this.subscriptions = [];
     }
 
     onChange(event) {
@@ -44,30 +43,30 @@ class SignatureCapture extends React.Component {
 
     componentDidMount() {
         if (this.props.onSaveEvent) {
-            let sub = DeviceEventEmitter.addListener(
+            this.subscription = DeviceEventEmitter.addListener(
                 'onSaveEvent',
                 this.props.onSaveEvent
             );
-            this.subscriptions.push(sub);
         }
 
         if (this.props.onDragEvent) {
-            let sub = DeviceEventEmitter.addListener(
+            this.subscription = DeviceEventEmitter.addListener(
                 'onDragEvent',
                 this.props.onDragEvent
             );
-            this.subscriptions.push(sub);
         }
     }
 
     componentWillUnmount() {
-        this.subscriptions.forEach(sub => sub.remove());
-        this.subscriptions = [];
+        if (this.subscription) {
+            this.subscription.remove()
+            this.subscription = null;
+        }
     }
 
     render() {
         return (
-            <RSSignatureView {...this.props} onChange={this.onChange} />
+            <RSSignatureView {...this.props} style={{ flex: 1 }} onChange={this.onChange} />
         );
     }
 
@@ -94,14 +93,8 @@ SignatureCapture.propTypes = {
     square: PropTypes.bool,
     saveImageFileInExtStorage: PropTypes.bool,
     viewMode: PropTypes.string,
-    showBorder: PropTypes.bool,
     showNativeButtons: PropTypes.bool,
-    showTitleLabel: PropTypes.bool,
-    maxSize:PropTypes.number,
-    minStrokeWidth: PropTypes.number,
-    maxStrokeWidth: PropTypes.number,
-    strokeColor: PropTypes.string,
-    backgroundColor: PropTypes.string
+    maxSize:PropTypes.number
 };
 
 var RSSignatureView = requireNativeComponent('RSSignatureView', SignatureCapture, {
